@@ -3,7 +3,7 @@
 
 Fine-tune a Transformer-based Large Language Model (LLM) found on HuggingFace Model Hub on the English subset of the training set of the MultiNERD Named Entity Recognition dataset.
 
-### Installing dependencies
+### Installing Dependencies
 Use the command below to install the packages according to the configuration file requirements.txt.
 $ pip install -r requirements.txt
 
