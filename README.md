@@ -8,10 +8,12 @@ Use the command below to install the packages according to the configuration fil
 ```
 $ pip install -r requirements.txt
 ```
-
+### Running the Task
+Utilize this command to execute both experiments A (with the complete tagset) and B (with a reduced tagset) using the script.
 ```
 $ ./run_script
 ```
+Execute the experiment individually by running the following command and replacing the command line argument with either "A" or "B".
 ```
 $ python main --exp A
 ```
