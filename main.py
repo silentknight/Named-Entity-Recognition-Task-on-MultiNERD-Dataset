@@ -3,10 +3,18 @@ from transformers import AutoTokenizer
 from transformers import AutoModelForTokenClassification, TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
 import numpy as np
+import argparse
+import os
+import json
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-experimentType = "B"
+parser = argparse.ArgumentParser(description='RISE Assignment')
+parser.add_argument('--exp', type=str, default='A',
+                    help='Experiment A with full taglist, Experiment B with reduced taglist.')
+
+args = parser.parse_args()
+experimentType = args.exp
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Check for PyTorch
@@ -24,7 +32,6 @@ model_checkpoint = "xlnet-base-cased"
 batch_size = 8
 
 tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
-
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Defining full taglist and subset of the taglist (PER, ORG, LOC, ANIM, and DIS)
@@ -80,6 +87,13 @@ reduced_tags = {
     "I-DIS": 14,
 }
 
+if experimentType=="A":
+    label_list = all_tags
+elif experimentType=="B":
+    label_list = reduced_tags
+
+label_id_list = {v: k for k, v in label_list.items()}
+label_id_list = dict(sorted(label_id_list.items()))
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Defining the functions to tokenize and load the MultiNERD dataset
@@ -131,27 +145,27 @@ def change_label_main(label_list, labels_to_change):
             new_label_list[_label] = labels_to_change[_id]
         else:
             new_label_list[_label] = _id
-
     label_id_list = {v: k for k, v in new_label_list.items()}
-
     return new_label_list, label_id_list
 
 def change_labels(example, labels_to_change):
     ner_tags = example["ner_tags"]
-
-    if all(tag == 0 for tag in ner_tags):
-        return example
-
     modified_ner_tags = []
     to_swap = list(labels_to_change.keys())
-
     for i in ner_tags:
         if i in to_swap:
             label_id = labels_to_change[i]
         else:
             label_id = i
         modified_ner_tags.append(label_id)
+    example["ner_tags"] = modified_ner_tags
+    return example
 
+def replace_id_with_labels(example, mapping_dict):
+    ner_tags = example["ner_tags"]
+    modified_ner_tags = []
+    for i in ner_tags:
+        modified_ner_tags.append(mapping_dict.get(i,i))
     example["ner_tags"] = modified_ner_tags
     return example
 
@@ -166,16 +180,9 @@ for split in dataset_split:
     dataset[split] = dataset[split].filter(lambda data: data["lang"] == "en")
     dataset[split] = dataset[split].remove_columns("lang")
 
-if experimentType=="A":
-    label_list = all_tags
-elif experimentType=="B":
-    label_list = reduced_tags
+if experimentType=="B":
     for split in dataset_split:
-    	dataset[split] = dataset[split].map(remove_excess_tags, fn_kwargs={"filtered_tags": reduced_tags.values()}, num_proc=4)
-
-
-label_id_list = {v: k for k, v in label_list.items()}
-label_id_list = dict(sorted(label_id_list.items()))
+    	dataset[split] = dataset[split].map(remove_excess_tags, fn_kwargs={"filtered_tags": label_list.values()}, num_proc=4)
 
 labels_to_change = labels_not_sequential(label_id_list)
 if labels_to_change:
@@ -184,45 +191,44 @@ if labels_to_change:
     for split in dataset_split:
         dataset[split] = dataset[split].map(change_labels, fn_kwargs={"labels_to_change": labels_to_change}, num_proc=4)
 
-
-
-class_labels = list(id2label.values())
-for split in dataset_split:
-    features = dataset[split].features.copy()
-    features["ner_tags"] = Sequence(feature=ClassLabel(names=class_labels))
-    dataset[split] = dataset[split].map(features=features)
-
-
 train_dataset = dataset["train"]
 test_dataset = dataset["test"]
 
 train_tokenized_datasets = train_dataset.map(tokenize_and_align_labels, batched=True)
 test_tokenized_datasets = test_dataset.map(tokenize_and_align_labels, batched=True)
 
-#----------------------------------------------------------------------------------------------------------------
+train_tokenized_datasets = train_tokenized_datasets.map(replace_id_with_labels, fn_kwargs={"mapping_dict": label_id_list}, num_proc=4)
+test_tokenized_datasets = test_tokenized_datasets.map(replace_id_with_labels, fn_kwargs={"mapping_dict": label_id_list}, num_proc=4)
 
+#-----------------------------------------------------------------------------------------------------------------------
+# Defining the model and Training arguments
+#-----------------------------------------------------------------------------------------------------------------------
+
+label_list = list(label_list.keys())
 model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list))
 
 args = TrainingArguments(
-    "rise-ner",
+    f"rise-ner-{model_checkpoint}-{experimentType}",
     evaluation_strategy = "epoch",
     learning_rate=1e-4,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
     num_train_epochs=5,
     weight_decay=0.00001,
-    save_steps=50000,
+    save_steps=100000,
 )
 
 data_collator = DataCollatorForTokenClassification(tokenizer)
 metric = load_metric("seqeval")
 
+#-----------------------------------------------------------------------------------------------------------------------
+# Computing the metrics
+#-----------------------------------------------------------------------------------------------------------------------
 
 def compute_metrics(p):
     predictions, labels = p
     predictions = np.argmax(predictions, axis=2)
 
-    # Remove ignored index (special tokens)
     true_predictions = [
         [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
@@ -233,12 +239,31 @@ def compute_metrics(p):
     ]
 
     results = metric.compute(predictions=true_predictions, references=true_labels)
+
+    for i in results.keys():
+        if not i.startswith("overall"):
+            print(f"Entity: {i}")
+            for res in results[i]:
+                if res != "number":
+                    print(f"{res} \t {results[i][res]}")
+
+    metrics_fname = f"metrics_of_{model_checkpoint}_{experimentType}.jsonl"
+    if not os.path.exists(metrics_fname):
+        open(metrics_fname, "w").close()
+
+    with open(metrics_fname, "a") as f:
+        f.write(json.dumps(results, default=str) + "\n")
+
     return {
         "precision": results["overall_precision"],
         "recall": results["overall_recall"],
         "f1": results["overall_f1"],
         "accuracy": results["overall_accuracy"],
     }
+
+#-----------------------------------------------------------------------------------------------------------------------
+# Start Training
+#-----------------------------------------------------------------------------------------------------------------------
 
 trainer = Trainer(
     model,
@@ -254,4 +279,4 @@ trainer.train()
 
 trainer.evaluate()
 
-trainer.save_model('rise.model')
+trainer.save_model('rise_{model_checkpoint}_{experimentType}.model')
