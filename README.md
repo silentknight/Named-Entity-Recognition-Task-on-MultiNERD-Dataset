@@ -5,7 +5,17 @@ Fine-tune a Transformer-based Large Language Model (LLM) found on HuggingFace Mo
 
 ### Installing Dependencies
 Use the command below to install the packages according to the configuration file requirements.txt.
+```
 $ pip install -r requirements.txt
+```
+
+```
+$ ./run_script
+```
+```
+$ python main --exp A
+```
+
 
 ## Resources:
 - HuggingFace Model Hub: https://huggingface.co/models
