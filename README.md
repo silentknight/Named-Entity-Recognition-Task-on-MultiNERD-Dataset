@@ -1,8 +1,7 @@
 # Assignment: Research Engineer in Natural Language Processing
 ## RISE Research Institutes of Sweden
 
-Fine-tune your chosen model on the English subset of the training set. This will be system A
-
+Fine-tune a Transformer-based Large Language Model (LLM) found on HuggingFace Model Hub (https://huggingface.co/models) on the English subset of the training set of the MultiNERD Named Entity Recognition dataset.
 
 ## Resources:
 - MultiNERD Named Entity Recognition dataset: https://huggingface.co/datasets/Babelscape/multinerd?row=17
