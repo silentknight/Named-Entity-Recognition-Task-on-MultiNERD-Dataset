@@ -25,9 +25,9 @@ In this specific scenario, I employed two pre-trained Language Models (LLMs) - D
 The model parameters are:
 ```
 batch_size = 8
-learning_rate=1e-4
-num_train_epochs=5
-weight_decay=0.00001
+learning_rate = 1e-4
+num_train_epochs = 5
+weight_decay = 0.00001
 ```
 
 ### Results
