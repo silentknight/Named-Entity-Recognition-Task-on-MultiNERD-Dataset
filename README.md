@@ -39,6 +39,9 @@ weight_decay = 0.00001
 ### Results
 The results are listed in '.jsonl' files.
 
+### Report of the Task
+Please find the report in the repository at: https://github.com/silentknight/RISE-MultiNERD-Task/blob/master/Report.pdf
+
 ## Resources:
 - HuggingFace Model Hub: https://huggingface.co/models
 - MultiNERD Named Entity Recognition dataset: https://huggingface.co/datasets/Babelscape/multinerd?row=17
