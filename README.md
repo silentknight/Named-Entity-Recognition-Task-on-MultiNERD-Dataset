@@ -3,9 +3,35 @@
 
 Fine-tune a Transformer-based Large Language Model (LLM) found on HuggingFace Model Hub on the English subset of the training set of the MultiNERD Named Entity Recognition dataset.
 
-### Installing dependencies
+### Installing Dependencies
 Use the command below to install the packages according to the configuration file requirements.txt.
+```
 $ pip install -r requirements.txt
+```
+
+### Running the Task
+Utilize this command to execute both experiments A (with the complete tagset) and B (with a reduced tagset) using the script.
+```
+$ ./run_script
+```
+Execute the experiment individually by running the following command and replacing the command line argument with either "A" or "B".
+```
+$ python main --exp A
+```
+
+### Training Details
+In this specific scenario, I employed two pre-trained Language Models (LLMs) - DistilBERT and XLNet.
+
+The model parameters are:
+```
+batch_size = 8
+learning_rate = 1e-4
+num_train_epochs = 5
+weight_decay = 0.00001
+```
+
+### Results
+The results are listed in '.jsonl' files.
 
 ## Resources:
 - HuggingFace Model Hub: https://huggingface.co/models
