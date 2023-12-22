@@ -20,7 +20,7 @@ $ python main --exp A
 ```
 
 ### Training Details
-In this specific scenario, I employed two pre-trained Language Models (LLMs) - DistilBERT and XLNet.
+In this specific scenario, three pre-trained Language Models (LLMs) were employed - BERT, DistilBERT, and XLNet.
 
 The model parameters are:
 ```
