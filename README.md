@@ -1,4 +1,4 @@
-# Assignment: Research Engineer in Natural Language Processing
+# Fine-tune a Pre-Trained LLM for Named Entity Recognition
 
 Fine-tune a Transformer-based Large Language Model (LLM) found on HuggingFace Model Hub on the English subset of the training set of the MultiNERD Named Entity Recognition dataset.
 
