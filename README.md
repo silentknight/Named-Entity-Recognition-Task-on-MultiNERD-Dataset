@@ -1,5 +1,4 @@
 # Assignment: Research Engineer in Natural Language Processing
-## RISE Research Institutes of Sweden
 
 Fine-tune a Transformer-based Large Language Model (LLM) found on HuggingFace Model Hub on the English subset of the training set of the MultiNERD Named Entity Recognition dataset.
 
@@ -38,9 +37,6 @@ weight_decay = 0.00001
 
 ### Results
 The results are listed in '.jsonl' files.
-
-### Report of the Task
-Please find the report in the repository at: https://github.com/silentknight/RISE-MultiNERD-Task/blob/master/Report.pdf
 
 ## Resources:
 - HuggingFace Model Hub: https://huggingface.co/models
